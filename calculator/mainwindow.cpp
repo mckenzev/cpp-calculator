@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QtAssert>
-
 #include <unordered_map>
 
 MainWindow::MainWindow(QWidget* parent)
@@ -88,9 +86,6 @@ void MainWindow::UpdateFormulaInLabel() const {
         {Operation::POWER, " ^ "}
     };
 
-    // Мап предусматривает все возможные варианты current_operation_, поэтому проверка не должна сработать
-    // Сработает только в том случае, если в Operation добавлят новый оператор, а в мап - нет
-    Q_ASSERT_X(OPERATIONS.find(current_operation_) != OPERATIONS.end(), std::to_string((int)current_operation_).c_str(), "not found in enum map");
     auto operation = OPERATIONS.at(current_operation_);
 
     if (operation.isEmpty()) {
@@ -101,7 +96,6 @@ void MainWindow::UpdateFormulaInLabel() const {
                                     .arg(active_number_)
                                     .arg(operation));
     }
-
 }
 
 bool MainWindow::IsValidNumber(QString num) const {
@@ -123,10 +117,6 @@ void MainWindow::OperationPressed() {
     };
     QPushButton* button = qobject_cast<QPushButton*>(sender());
     QString text = button->text();
-
-    // Ни в одном из сценариев данного проекта строка не должна сработать
-    // сработает только в случае, если в GUI будет добавлен новый оператор, а в Operation и мап - нет
-    Q_ASSERT_X(OPERATIONS.find(text) != OPERATIONS.end(), text.toStdString().c_str(), "not found in map");
 
     // Ввод цифр работает только с input_number_. Если слот вызвался для первичного ввода оператора, значит содержимое
     // input_number_ - первый операнд. Но если же input_number_ пуст, то для первого операнда берется значение из active_number_
