@@ -53,7 +53,7 @@ void MainWindow::AllConnects() const {
     connect(ui->pb_point, &QPushButton::clicked, this, &MainWindow::PointPressed);
     connect(ui->pb_backspace, &QPushButton::clicked, this, &MainWindow::BackspacePressed);
 
-    // Очиска, равно
+    // Очистка, равно
     connect(ui->pb_clear, &QPushButton::clicked, this, &MainWindow::ClearPressed);
     connect(ui->pb_equal, &QPushButton::clicked, this, &MainWindow::EqualPressed);
 }
