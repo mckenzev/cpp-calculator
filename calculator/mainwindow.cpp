@@ -53,7 +53,7 @@ void MainWindow::AllConnects() const {
     connect(ui->pb_point, &QPushButton::clicked, this, &MainWindow::PointPressed);
     connect(ui->pb_backspace, &QPushButton::clicked, this, &MainWindow::BackspacePressed);
 
-    // Очиска, равно
+    // Очистка, равно
     connect(ui->pb_clear, &QPushButton::clicked, this, &MainWindow::ClearPressed);
     connect(ui->pb_equal, &QPushButton::clicked, this, &MainWindow::EqualPressed);
 }
@@ -61,11 +61,7 @@ void MainWindow::AllConnects() const {
 
 void MainWindow::UpdateLabels() const {
     UpdateFormulaInLabel();
-    QString l_result_text = input_number_.isEmpty()
-                          ? QString::number(active_number_)
-                          : input_number_;
-
-    ui->l_result->setText(l_result_text);
+    UpdateResultLabel();
 }
 
 void MainWindow::UpdateMemoryLabel() const {
@@ -96,6 +92,14 @@ void MainWindow::UpdateFormulaInLabel() const {
                                     .arg(active_number_)
                                     .arg(operation));
     }
+}
+
+void MainWindow::UpdateResultLabel() const {
+    QString l_result_text = input_number_.isEmpty()
+                          ? QString::number(active_number_)
+                          : input_number_;
+
+    ui->l_result->setText(l_result_text);
 }
 
 bool MainWindow::IsValidNumber(QString num) const {
@@ -138,11 +142,16 @@ void MainWindow::MemoryClearPressed() {
     UpdateMemoryLabel();
 }
 
+// #include <QMessageBox> // !!! Удалить перед сдачей
+
 void MainWindow::MemoryLoadPressed() {
-    if (memory_saved_) {
-        active_number_ = memory_cell_;
-        UpdateLabels();
+    if (!memory_saved_) {
+        return;
     }
+
+    input_number_.clear();
+    active_number_ = memory_cell_;
+    UpdateLabels();
 }
 
 void MainWindow::MemorySavePressed() {
@@ -174,16 +183,22 @@ void MainWindow::PointPressed() {
 }
 
 void MainWindow::BackspacePressed() {
-    if (!input_number_.isEmpty()) {
-        // Укорачивание на 1 символ при изменении .size контейнера за O(1),
-        // вместо пересоздания обьекта с размером на 1 меньше исходного за O(n)
-        auto new_size = input_number_.size() - 1;
-        input_number_.resize(new_size);
-        UpdateLabels();
+    if (input_number_.isEmpty()) {
+        return;
     }
+    // Укорачивание на 1 символ при изменении .size контейнера за O(1),
+    // вместо пересоздания обьекта с размером на 1 меньше исходного за O(n)
+    auto new_size = input_number_.size() - 1;
+    input_number_.resize(new_size);
+    UpdateLabels();
+
 }
 
 void MainWindow::NegativePressed() {
+    if (input_number_.isEmpty()) {
+        return;
+    }
+
     auto number = ui->l_result->text().toDouble();
     calculator_.SetNumber(number);
     calculator_.SetNegativ();

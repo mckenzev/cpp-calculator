@@ -53,5 +53,6 @@ private:
     void UpdateLabels() const;
     void UpdateMemoryLabel() const;
     void UpdateFormulaInLabel() const;
+    void UpdateResultLabel() const;
     bool IsValidNumber(QString num) const;
 };
