@@ -99,6 +99,7 @@ void MainWindow::UpdateResultLabel() const {
                           ? QString::number(active_number_)
                           : input_number_;
 
+
     ui->l_result->setText(l_result_text);
 }
 
@@ -181,7 +182,23 @@ void MainWindow::PointPressed() {
 }
 
 void MainWindow::BackspacePressed() {
-    if (input_number_.isEmpty()) {
+    // Очистка второго операнда
+    if (input_number_.isEmpty() && current_operation_ != Operation::NO_OPERATION) {
+        return;
+    }
+
+    // Очистка первого операнда - результата вычисления и выгрузки из memory_cell_
+    if (input_number_.isEmpty() && current_operation_ == Operation::NO_OPERATION) {
+        active_number_ = 0;
+        UpdateLabels();
+        return;
+    }
+
+    // Костыльный метод обработки частного случая посимвольного удаления первого операнда
+    if (input_number_.size() == 1 && current_operation_ == Operation::NO_OPERATION) {
+        active_number_ = 0;
+        input_number_ = "";
+        UpdateLabels();
         return;
     }
     // Укорачивание на 1 символ при изменении .size контейнера за O(1),
