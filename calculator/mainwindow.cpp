@@ -142,8 +142,6 @@ void MainWindow::MemoryClearPressed() {
     UpdateMemoryLabel();
 }
 
-// #include <QMessageBox> // !!! Удалить перед сдачей
-
 void MainWindow::MemoryLoadPressed() {
     if (!memory_saved_) {
         return;
