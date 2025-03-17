@@ -111,6 +111,31 @@ bool MainWindow::IsValidNumber(QString num) const {
     return (num.isEmpty() || num.front() != '0' || num.contains('.'));
 }
 
+void MainWindow::BackspaceProcessingFirstOperand() {
+    // Если input_number_ пуст(на выводе active_number_) или его длина равна 1 символу, значит
+    // после нажатия на backespace состояние программы должно быть как на старте работы программы (но memory_cell_ не трогаем)
+    if (input_number_.isEmpty() || input_number_.size() == 1) {
+        ClearPressed();
+        return;
+    }
+
+    // Иначе удаляется только 1 символ из input_number_
+    auto new_size = input_number_.size() - 1;
+    input_number_.resize(new_size);
+}
+
+void MainWindow::BackspaceProcessingSecondOperand() {
+
+    // У пустого input_number_ нечего удалять
+    if (input_number_.isEmpty()) {
+        return;
+    }
+
+    // Удаление 1 символа с конца
+    auto new_size = input_number_.size() - 1;
+    input_number_.resize(new_size);
+}
+
 // Slots
 void MainWindow::OperationPressed() {
     static const std::unordered_map<QString, Operation> OPERATIONS = {
@@ -125,7 +150,7 @@ void MainWindow::OperationPressed() {
 
     // Ввод цифр работает только с input_number_. Если слот вызвался для первичного ввода оператора, значит содержимое
     // input_number_ - первый операнд. Но если же input_number_ пуст, то для первого операнда берется значение из active_number_
-    // (в нем либо результат вычисления, либо 0 после нажатия на pb_clear)
+    // (в нем либо результат вычисления, либо 0 после нажатия на pb_clear, либо выгруженное значение из memory_cell_)
     // т.о. после нажатия равенства можно сразу же оперировать с результатом, добавив к нему оператор, или вместо него вводить другой "Первый операнд".
     // Во всех других случаях меняется только оператор, а операнды остаются неизменны
     if (current_operation_ == Operation::NO_OPERATION && !input_number_.isEmpty()) {
@@ -182,31 +207,15 @@ void MainWindow::PointPressed() {
 }
 
 void MainWindow::BackspacePressed() {
-    // Очистка второго операнда
-    if (input_number_.isEmpty() && current_operation_ != Operation::NO_OPERATION) {
-        return;
+    // Если current_operation_ равен Operation::NO_OPERATION,
+    // значит сейчас редактируется первый операнд
+    bool its_first_operand = current_operation_ == Operation::NO_OPERATION;
+    if (its_first_operand) {
+        BackspaceProcessingFirstOperand();
+    } else {
+        BackspaceProcessingSecondOperand();
     }
-
-    // Очистка первого операнда - результата вычисления и выгрузки из memory_cell_
-    if (input_number_.isEmpty() && current_operation_ == Operation::NO_OPERATION) {
-        active_number_ = 0;
-        UpdateLabels();
-        return;
-    }
-
-    // Костыльный метод обработки частного случая посимвольного удаления первого операнда
-    if (input_number_.size() == 1 && current_operation_ == Operation::NO_OPERATION) {
-        active_number_ = 0;
-        input_number_ = "";
-        UpdateLabels();
-        return;
-    }
-    // Укорачивание на 1 символ при изменении .size контейнера за O(1),
-    // вместо пересоздания обьекта с размером на 1 меньше исходного за O(n)
-    auto new_size = input_number_.size() - 1;
-    input_number_.resize(new_size);
     UpdateLabels();
-
 }
 
 void MainWindow::NegativePressed() {
