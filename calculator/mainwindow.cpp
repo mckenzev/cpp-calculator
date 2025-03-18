@@ -111,31 +111,6 @@ bool MainWindow::IsValidNumber(QString num) const {
     return (num.isEmpty() || num.front() != '0' || num.contains('.'));
 }
 
-void MainWindow::BackspaceProcessingFirstOperand() {
-    // Если input_number_ пуст(на выводе active_number_) или его длина равна 1 символу, значит
-    // после нажатия на backespace состояние программы должно быть как на старте работы программы (но memory_cell_ не трогаем)
-    if (input_number_.isEmpty() || input_number_.size() == 1) {
-        ClearPressed();
-        return;
-    }
-
-    // Иначе удаляется только 1 символ из input_number_
-    auto new_size = input_number_.size() - 1;
-    input_number_.resize(new_size);
-}
-
-void MainWindow::BackspaceProcessingSecondOperand() {
-
-    // У пустого input_number_ нечего удалять
-    if (input_number_.isEmpty()) {
-        return;
-    }
-
-    // Удаление 1 символа с конца
-    auto new_size = input_number_.size() - 1;
-    input_number_.resize(new_size);
-}
-
 // Slots
 void MainWindow::OperationPressed() {
     static const std::unordered_map<QString, Operation> OPERATIONS = {
@@ -179,7 +154,9 @@ void MainWindow::MemoryLoadPressed() {
 }
 
 void MainWindow::MemorySavePressed() {
-    memory_cell_ = active_number_;
+    memory_cell_ = current_operation_ == Operation::NO_OPERATION
+                   ? input_number_.toDouble()
+                   : active_number_;
     memory_saved_ = true;
     UpdateMemoryLabel();
 }
@@ -191,9 +168,9 @@ void MainWindow::NumberPressed() {
         input_number_ += text;
     }
 
-    if (current_operation_ == Operation::NO_OPERATION) {
-        active_number_ = input_number_.toDouble();
-    }
+    // if (current_operation_ == Operation::NO_OPERATION) {
+    //     active_number_ = input_number_.toDouble();
+    // }
     UpdateLabels();
 }
 
@@ -207,14 +184,11 @@ void MainWindow::PointPressed() {
 }
 
 void MainWindow::BackspacePressed() {
-    // Если current_operation_ равен Operation::NO_OPERATION,
-    // значит сейчас редактируется первый операнд
-    bool its_first_operand = current_operation_ == Operation::NO_OPERATION;
-    if (its_first_operand) {
-        BackspaceProcessingFirstOperand();
-    } else {
-        BackspaceProcessingSecondOperand();
+    if (input_number_.isEmpty()) {
+        return;
     }
+
+    input_number_.chop(1);
     UpdateLabels();
 }
 

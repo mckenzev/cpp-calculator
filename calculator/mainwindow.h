@@ -55,6 +55,4 @@ private:
     void UpdateFormulaInLabel() const;
     void UpdateResultLabel() const;
     bool IsValidNumber(QString num) const;
-    void BackspaceProcessingFirstOperand();
-    void BackspaceProcessingSecondOperand();
 };
