@@ -3,6 +3,8 @@
 
 #include <unordered_map>
 
+#include <QMessageBox>
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
@@ -154,7 +156,7 @@ void MainWindow::MemoryLoadPressed() {
 }
 
 void MainWindow::MemorySavePressed() {
-    memory_cell_ = current_operation_ == Operation::NO_OPERATION
+    memory_cell_ = current_operation_ == Operation::NO_OPERATION && !input_number_.isEmpty()
                    ? input_number_.toDouble()
                    : active_number_;
     memory_saved_ = true;
@@ -168,9 +170,6 @@ void MainWindow::NumberPressed() {
         input_number_ += text;
     }
 
-    // if (current_operation_ == Operation::NO_OPERATION) {
-    //     active_number_ = input_number_.toDouble();
-    // }
     UpdateLabels();
 }
 
