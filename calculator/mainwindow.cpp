@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include <QButtonGroup>
-
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -56,18 +56,30 @@ void MainWindow::SetExtraKey(const std::optional<std::string>& key) {
 }
 
 void MainWindow::SetDigitKeyCallback(std::function<void(int key)> cb) {
+    if (cb == nullptr) {
+        return;
+    }
     digit_key_callback_ = cb;
 }
 
 void MainWindow::SetProcessOperationKeyCallback(std::function<void(Operation key)> cb) {
+    if (cb == nullptr) {
+        return;
+    }
     process_operation_key_callback_ = cb;
 }
 
 void MainWindow::SetProcessControlKeyCallback(std::function<void(ControlKey key)> cb) {
+    if (cb == nullptr) {
+        return;
+    }
     process_control_key_callback_ = cb;
 }
 
 void MainWindow::SetControllerCallback(std::function<void(ControllerType controller)> cb) {
+    if (cb == nullptr) {
+        return;
+    }
     controller_callback_ = cb;
 }
 
@@ -125,18 +137,31 @@ void MainWindow::ControlConects() {
 
 // Слоты
 void MainWindow::DigitPressed(int num) {
+    if (digit_key_callback_ == nullptr) {
+        return;
+    }
     digit_key_callback_(num);
 }
 
 void MainWindow::OperationPressed(int id) {
+    if (process_operation_key_callback_ == nullptr) {
+        return;
+    }
     process_operation_key_callback_(static_cast<Operation>(id));
 }
 
 void MainWindow::ControlPressed(int id) {
+    if (process_control_key_callback_ == nullptr) {
+        return;
+    }
     process_control_key_callback_(static_cast<ControlKey>(id));
 }
 
 void MainWindow::ChangeType() {
+    if (controller_callback_ == nullptr) {
+        return;
+    }
+
     static const std::unordered_map<QString, ControllerType> kTypes = {
         {"double", ControllerType::DOUBLE},
         {"float", ControllerType::FLOAT},
