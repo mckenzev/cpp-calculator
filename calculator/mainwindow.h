@@ -1,6 +1,6 @@
 #pragma once
 
-#include "calculator.h"
+#include "enums.h"
 
 #include <QMainWindow>
 
@@ -13,46 +13,40 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-private:
-    enum class Operation {
-        NO_OPERATION,   // — операция не задана
-        ADDITION,       // — плюс
-        SUBTRACTION,    // — минус
-        MULTIPLICATION, // — умножить
-        DIVISION,       // — поделить
-        POWER           // — возведение в степень
-    };
-
 public:
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-private slots:
-    void OperationPressed();
-    void NegativePressed();
-    void MemoryClearPressed();
-    void MemoryLoadPressed();
-    void MemorySavePressed();
-    void NumberPressed();
-    void PointPressed();
-    void BackspacePressed();
-    void ClearPressed();
-    void EqualPressed();
+    // Изменение состояния лейблов
+    void SetInputText(const std::string& text);
+    void SetErrorText(const std::string& text);
+    void SetFormulaText(const std::string& text);
+    void SetMemText(const std::string& text);
+    void SetExtraKey(const std::optional<std::string>& key);
+
+    // Установка колбек функций
+    void SetDigitKeyCallback(std::function<void(int key)> cb);
+    void SetProcessOperationKeyCallback(std::function<void(Operation key)> cb);
+    void SetProcessControlKeyCallback(std::function<void(ControlKey key)> cb);
+    void SetControllerCallback(std::function<void(ControllerType controller)> cb);
 
 private:
     Ui::MainWindow* ui;
-    Calculator calculator_;
-    Operation current_operation_ = Operation::NO_OPERATION;
-    double active_number_ = 0;
-    QString input_number_;
-    double memory_cell_;
-    bool memory_saved_ = false;
 
-    void InitialSettings() const;
-    void AllConnects() const;
-    void UpdateLabels() const;
-    void UpdateMemoryLabel() const;
-    void UpdateFormulaInLabel() const;
-    void UpdateResultLabel() const;
-    bool IsValidNumber(QString num) const;
+    std::function<void(int key)> digit_key_callback_;
+    std::function<void(Operation key)> process_operation_key_callback_;
+    std::function<void(ControlKey key)> process_control_key_callback_;
+    std::function<void(ControllerType controller)> controller_callback_;
+
+    // Коннекты по группам кнопок
+    void AllConects();
+    void DigitConects();
+    void OperationConects();
+    void ControlConects();
+
+private slots:
+    void DigitPressed(int);
+    void OperationPressed(int);
+    void ControlPressed(int);
+    void ChangeType();
 };

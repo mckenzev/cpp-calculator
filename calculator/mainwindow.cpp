@@ -3,252 +3,149 @@
 
 #include <unordered_map>
 
+#include <QButtonGroup>
+
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
-
-    InitialSettings();
-    AllConnects();
+    ui->cmb_controller->addItems({
+        "double",
+        "float",
+        "uint8_t",
+        "int",
+        "int64_t",
+        "size_t",
+        "Rational"
+    });
+    AllConects();
 }
 
 MainWindow::~MainWindow() {
     delete ui;
 }
 
-void MainWindow::InitialSettings() const {
-    ui->l_result->setText("0");
-    ui->l_memory->setText("");
-    ui->l_formula->setText("");
+void MainWindow::SetInputText(const std::string& text) {
+    // При замене стиля на "" сбивается размер шрифта
+    ui->l_result->setStyleSheet("font: 14pt \"Segoe UI\";\n"
+                                "color: black;");
+    ui->l_result->setText(QString::fromStdString(text));
 }
 
-void MainWindow::AllConnects() const {
-    // Бинарные операторы
-    connect(ui->pb_add, &QPushButton::clicked, this, &MainWindow::OperationPressed);
-    connect(ui->pb_sub, &QPushButton::clicked, this, &MainWindow::OperationPressed);
-    connect(ui->pb_mul, &QPushButton::clicked, this, &MainWindow::OperationPressed);
-    connect(ui->pb_div, &QPushButton::clicked, this, &MainWindow::OperationPressed);
-    connect(ui->pb_pow, &QPushButton::clicked, this, &MainWindow::OperationPressed);
-
-    // Унарные операторы
-    connect(ui->pb_negative, &QPushButton::clicked, this, &MainWindow::NegativePressed);
-
-    // Работа с memory
-    connect(ui->pb_memory_clear, &QPushButton::clicked, this, &MainWindow::MemoryClearPressed);
-    connect(ui->pb_memory_load, &QPushButton::clicked, this, &MainWindow::MemoryLoadPressed);
-    connect(ui->pb_memory_save, &QPushButton::clicked, this, &MainWindow::MemorySavePressed);
-
-    // Цифры
-    connect(ui->pb_0, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_1, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_2, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_3, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_4, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_5, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_6, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_7, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_8, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-    connect(ui->pb_9, &QPushButton::clicked, this, &MainWindow::NumberPressed);
-
-    // Точка, backspace
-    connect(ui->pb_point, &QPushButton::clicked, this, &MainWindow::PointPressed);
-    connect(ui->pb_backspace, &QPushButton::clicked, this, &MainWindow::BackspacePressed);
-
-    // Очистка, равно
-    connect(ui->pb_clear, &QPushButton::clicked, this, &MainWindow::ClearPressed);
-    connect(ui->pb_equal, &QPushButton::clicked, this, &MainWindow::EqualPressed);
+void MainWindow::SetErrorText(const std::string& text) {
+    ui->l_result->setStyleSheet("font: 14pt \"Segoe UI\";\n"
+                                "color: red;");
+    ui->l_result->setText(QString::fromStdString(text));
 }
 
-
-void MainWindow::UpdateLabels() const {
-    UpdateFormulaInLabel();
-    UpdateResultLabel();
+void MainWindow::SetFormulaText(const std::string& text) {
+    ui->l_formula->setText(QString::fromStdString(text));
 }
 
-void MainWindow::UpdateMemoryLabel() const {
-    if (memory_saved_) {
-        ui->l_memory->setText("M");
-    } else {
-        ui->l_memory->setText("");
+void MainWindow::SetMemText(const std::string& text) {
+    ui->l_memory->setText(QString::fromStdString(text));
+}
+
+void MainWindow::SetExtraKey(const std::optional<std::string>& key) {
+    if (!key.has_value()) {
+        ui->tb_extra->hide();
+        return;
     }
+    ui->tb_extra->show();
+    ui->tb_extra->setText(QString::fromStdString(key.value()));
 }
 
-void MainWindow::UpdateFormulaInLabel() const {
-    static const std::unordered_map<Operation, QString> OPERATIONS = {
-        {Operation::NO_OPERATION, ""},
-        {Operation::ADDITION, " + "},
-        {Operation::SUBTRACTION, " − "},
-        {Operation::MULTIPLICATION, " × "},
-        {Operation::DIVISION, " ÷ "},
-        {Operation::POWER, " ^ "}
+void MainWindow::SetDigitKeyCallback(std::function<void(int key)> cb) {
+    digit_key_callback_ = cb;
+}
+
+void MainWindow::SetProcessOperationKeyCallback(std::function<void(Operation key)> cb) {
+    process_operation_key_callback_ = cb;
+}
+
+void MainWindow::SetProcessControlKeyCallback(std::function<void(ControlKey key)> cb) {
+    process_control_key_callback_ = cb;
+}
+
+void MainWindow::SetControllerCallback(std::function<void(ControllerType controller)> cb) {
+    controller_callback_ = cb;
+}
+
+// Коннекты
+void MainWindow::AllConects() {
+    DigitConects();
+    OperationConects();
+    ControlConects();
+    connect(ui->cmb_controller, SIGNAL(currentIndexChanged(int)), this, SLOT(ChangeType()));
+}
+
+void MainWindow::DigitConects() {
+    QButtonGroup *digit_keys = new QButtonGroup(this);
+
+    digit_keys->addButton(ui->pb_0, 0);
+    digit_keys->addButton(ui->pb_1, 1);
+    digit_keys->addButton(ui->pb_2, 2);
+    digit_keys->addButton(ui->pb_3, 3);
+    digit_keys->addButton(ui->pb_4, 4);
+    digit_keys->addButton(ui->pb_5, 5);
+    digit_keys->addButton(ui->pb_6, 6);
+    digit_keys->addButton(ui->pb_7, 7);
+    digit_keys->addButton(ui->pb_8, 8);
+    digit_keys->addButton(ui->pb_9, 9);
+
+    connect(digit_keys, SIGNAL(idClicked(int)), this, SLOT(DigitPressed(int)));
+}
+
+void MainWindow::OperationConects() {
+    QButtonGroup* operation_keys = new QButtonGroup(this);
+
+    operation_keys->addButton(ui->pb_add, static_cast<int>(Operation::ADDITION));
+    operation_keys->addButton(ui->pb_sub, static_cast<int>(Operation::SUBTRACTION));
+    operation_keys->addButton(ui->pb_mul, static_cast<int>(Operation::MULTIPLICATION));
+    operation_keys->addButton(ui->pb_div, static_cast<int>(Operation::DIVISION));
+    operation_keys->addButton(ui->pb_pow, static_cast<int>(Operation::POWER));
+
+    connect(operation_keys, SIGNAL(idClicked(int)), this, SLOT(OperationPressed(int)));
+}
+
+void MainWindow::ControlConects() {
+    QButtonGroup* control_keys = new QButtonGroup(this);
+
+    control_keys->addButton(ui->pb_equal, static_cast<int>(ControlKey::EQUALS));
+    control_keys->addButton(ui->pb_clear, static_cast<int>(ControlKey::CLEAR));
+    control_keys->addButton(ui->pb_memory_save, static_cast<int>(ControlKey::MEM_SAVE));
+    control_keys->addButton(ui->pb_memory_load, static_cast<int>(ControlKey::MEM_LOAD));
+    control_keys->addButton(ui->pb_memory_clear, static_cast<int>(ControlKey::MEM_CLEAR));
+    control_keys->addButton(ui->pb_negative, static_cast<int>(ControlKey::PLUS_MINUS));
+    control_keys->addButton(ui->pb_backspace, static_cast<int>(ControlKey::BACKSPACE));
+    control_keys->addButton(ui->tb_extra, static_cast<int>(ControlKey::EXTRA_KEY));
+
+    connect(control_keys, SIGNAL(idClicked(int)), this, SLOT(ControlPressed(int)));
+}
+
+// Слоты
+void MainWindow::DigitPressed(int num) {
+    digit_key_callback_(num);
+}
+
+void MainWindow::OperationPressed(int id) {
+    process_operation_key_callback_(static_cast<Operation>(id));
+}
+
+void MainWindow::ControlPressed(int id) {
+    process_control_key_callback_(static_cast<ControlKey>(id));
+}
+
+void MainWindow::ChangeType() {
+    static const std::unordered_map<QString, ControllerType> kTypes = {
+        {"double", ControllerType::DOUBLE},
+        {"float", ControllerType::FLOAT},
+        {"uint8_t", ControllerType::UINT8_T},
+        {"int", ControllerType::INT},
+        {"int64_t", ControllerType::INT64_T},
+        {"size_t", ControllerType::SIZE_T},
+        {"Rational", ControllerType::RATIONAL}
     };
-
-    auto operation = OPERATIONS.at(current_operation_);
-
-    if (operation.isEmpty()) {
-        ui->l_formula->setText("");
-        ui->l_result->setText(input_number_);
-    } else {
-        ui->l_formula->setText(QString("%1%2")
-                                    .arg(active_number_)
-                                    .arg(operation));
-    }
-}
-
-void MainWindow::UpdateResultLabel() const {
-    QString l_result_text = input_number_.isEmpty()
-                          ? QString::number(active_number_)
-                          : input_number_;
-
-
-    ui->l_result->setText(l_result_text);
-}
-
-bool MainWindow::IsValidNumber(QString num) const {
-    // Пустое число - валидно
-    // Если число не начинается с 0, или начинается с 0, но содержит в себе точку,
-    // значит это число валидно
-
-    return (num.isEmpty() || num.front() != '0' || num.contains('.'));
-}
-
-// Slots
-void MainWindow::OperationPressed() {
-    static const std::unordered_map<QString, Operation> OPERATIONS = {
-        {"+", Operation::ADDITION},
-        {"−", Operation::SUBTRACTION},
-        {"×", Operation::MULTIPLICATION},
-        {"÷", Operation::DIVISION},
-        {"xʸ", Operation::POWER}
-    };
-    QPushButton* button = qobject_cast<QPushButton*>(sender());
-    QString text = button->text();
-
-    // Ввод цифр работает только с input_number_. Если слот вызвался для первичного ввода оператора, значит содержимое
-    // input_number_ - первый операнд. Но если же input_number_ пуст, то для первого операнда берется значение из active_number_
-    // (в нем либо результат вычисления, либо 0 после нажатия на pb_clear, либо выгруженное значение из memory_cell_)
-    // т.о. после нажатия равенства можно сразу же оперировать с результатом, добавив к нему оператор, или вместо него вводить другой "Первый операнд".
-    // Во всех других случаях меняется только оператор, а операнды остаются неизменны
-    if (current_operation_ == Operation::NO_OPERATION && !input_number_.isEmpty()) {
-        active_number_ = input_number_.toDouble();
-        input_number_.clear();
-    }
-
-    current_operation_ = OPERATIONS.at(text);
-
-    UpdateFormulaInLabel();
-}
-
-void MainWindow::MemoryClearPressed() {
-    memory_saved_ = false;
-    UpdateMemoryLabel();
-}
-
-void MainWindow::MemoryLoadPressed() {
-    if (!memory_saved_) {
-        return;
-    }
-
-    input_number_.clear();
-    active_number_ = memory_cell_;
-    UpdateLabels();
-}
-
-void MainWindow::MemorySavePressed() {
-    memory_cell_ = current_operation_ == Operation::NO_OPERATION && !input_number_.isEmpty()
-                   ? input_number_.toDouble()
-                   : active_number_;
-    memory_saved_ = true;
-    UpdateMemoryLabel();
-}
-
-void MainWindow::NumberPressed() {
-    QPushButton* button = qobject_cast<QPushButton*>(sender());
-    QString text = button->text();
-    if (IsValidNumber(input_number_)) {
-        input_number_ += text;
-    }
-
-    UpdateLabels();
-}
-
-void MainWindow::PointPressed() {
-    if (input_number_.isEmpty()) {
-        input_number_ += "0.";
-    } else if (!input_number_.contains('.')) {
-        input_number_ += '.';
-    }
-    UpdateLabels();
-}
-
-void MainWindow::BackspacePressed() {
-    if (input_number_.isEmpty()) {
-        return;
-    }
-
-    input_number_.chop(1);
-    UpdateLabels();
-}
-
-void MainWindow::NegativePressed() {
-    if (input_number_.isEmpty()) {
-        return;
-    }
-
-    auto number = ui->l_result->text().toDouble();
-    calculator_.SetNumber(number);
-    calculator_.SetNegativ();
-    input_number_ = QString::number(calculator_.GetNumber());
-    UpdateLabels();
-}
-
-void MainWindow::ClearPressed() {
-    input_number_.clear();
-    active_number_ = 0;
-    current_operation_ = Operation::NO_OPERATION;
-
-    ui->l_result->setText("0");
-    ui->l_formula->setText("");
-}
-
-void MainWindow::EqualPressed() {
-    if (current_operation_ == Operation::NO_OPERATION) {
-        return;
-    }
-
-    // Обработка отсутствия ввода второго числа
-    // Если второй операнд не введен, значит в качестве него
-    // будет то же значение, что и у первого операнда
-    if (input_number_.isEmpty()) {
-        input_number_ = QString::number(active_number_);
-    }
-
-    double second_num = input_number_.toDouble();
-    calculator_.SetNumber(active_number_);
-    switch(current_operation_) {
-        case Operation::ADDITION :
-            calculator_.Add(second_num);
-            break;
-        case Operation::SUBTRACTION :
-            calculator_.Sub(second_num);
-            break;
-        case Operation::MULTIPLICATION :
-            calculator_.Mul(second_num);
-            break;
-        case Operation::DIVISION :
-            calculator_.Div(second_num);
-            break;
-        case Operation::POWER :
-            calculator_.Pow(second_num);
-            break;
-        case Operation::NO_OPERATION:
-            // Эта строка не нужна, т.к. проверка производится в самом начале, но IDE кидает варнинги без этой строки
-            break;
-        }
-
-    auto formula_text = ui->l_formula->text();
-    ui->l_formula->setText(formula_text + input_number_ + " =");
-    active_number_ = calculator_.GetNumber();
-    current_operation_ = Operation::NO_OPERATION;
-    ui->l_result->setText(QString::number(active_number_));
-    input_number_.clear();
+    ControllerType type = kTypes.at(ui->cmb_controller->currentText());
+    controller_callback_(type);
 }
